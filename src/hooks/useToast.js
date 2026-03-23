@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 export function useToast() {
   const [toast, setToast] = useState(null)
@@ -8,6 +8,10 @@ export function useToast() {
     clearTimeout(timer.current)
     setToast({ message, emoji })
     timer.current = setTimeout(() => setToast(null), 2600)
+  }, [])
+
+  useEffect(() => {
+    return () => clearTimeout(timer.current)
   }, [])
 
   return { toast, show }

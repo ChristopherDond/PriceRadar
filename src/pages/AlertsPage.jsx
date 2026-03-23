@@ -1,9 +1,17 @@
-import React from 'react'
-import { brl } from '../utils/priceEngine'
+import { useMemo } from 'react'
+import { brl, getBestAvailableSource } from '../utils/priceEngine'
 
-export default function AlertsPage({ alerts, onDeleteAlert }) {
-  const active    = alerts.filter(a => a.current >  a.target)
-  const triggered = alerts.filter(a => a.current <= a.target)
+export default function AlertsPage({ alerts, allPrices, onDeleteAlert }) {
+  const hydratedAlerts = useMemo(() => {
+    return alerts.map(alert => {
+      const prices = allPrices[alert.productId] ?? []
+      const current = getBestAvailableSource(prices)?.price ?? Number.POSITIVE_INFINITY
+      return { ...alert, current }
+    })
+  }, [alerts, allPrices])
+
+  const active    = hydratedAlerts.filter(a => a.current > a.target)
+  const triggered = hydratedAlerts.filter(a => a.current <= a.target)
 
   if (!alerts.length) {
     return (
@@ -67,7 +75,9 @@ export default function AlertsPage({ alerts, onDeleteAlert }) {
         )}
 
         <button
+          type="button"
           onClick={() => onDeleteAlert(alert.id)}
+          aria-label={`Deletar alerta de ${alert.name}`}
           style={{ background: 'transparent', border: '1px solid var(--bord)', color: 'var(--muted)', padding: '5px 9px', borderRadius: 6, cursor: 'pointer', fontSize: 12, flexShrink: 0 }}
           title="Deletar alerta"
         >

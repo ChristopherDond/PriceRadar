@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell,
@@ -25,8 +24,7 @@ function MetricTooltip({ active, payload, label }) {
   )
 }
 
-export default function ApiStatsPage({ apiCalls }) {
-  const totalCalls   = API_METRICS.reduce((s, m) => s + m.calls, 0)
+export default function ApiStatsPage({ apiCalls, sourceCount }) {
   const avgLatency   = Math.round(API_METRICS.reduce((s, m) => s + m.latencyMs, 0) / API_METRICS.length)
   const successRate  = (100 - API_METRICS.reduce((s, m) => s + parseFloat(m.errorPct), 0) / API_METRICS.length).toFixed(1)
 
@@ -38,10 +36,10 @@ export default function ApiStatsPage({ apiCalls }) {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--kpi-cols)', gap: 10, marginBottom: 16 }}>
         {[
           { label: 'Total de Calls', value: apiCalls.toLocaleString('pt-BR'), color: 'var(--amber)', sub: 'sessão atual' },
-          { label: 'Fontes Ativas',  value: '5 / 5',                          color: 'var(--text)', sub: '100% uptime' },
+          { label: 'Fontes Ativas',  value: `${sourceCount} / ${sourceCount}`, color: 'var(--text)', sub: '100% uptime' },
           { label: 'Latência Média', value: `${avgLatency}ms`,                color: 'var(--text)', sub: 'por request' },
           { label: 'Taxa de Sucesso',value: `${successRate}%`,                color: '#22c55e',      sub: 'últimas 24h' },
         ].map(s => (
@@ -72,7 +70,7 @@ export default function ApiStatsPage({ apiCalls }) {
             />
             <Tooltip content={<MetricTooltip />} cursor={{ fill: 'rgba(255,255,255,.03)' }} />
             <Bar dataKey="latencyMs" radius={[4, 4, 0, 0]}>
-              {API_METRICS.map((m, i) => (
+              {API_METRICS.map(m => (
                 <Cell key={m.id} fill={m.color} fillOpacity={0.85} />
               ))}
             </Bar>
@@ -81,7 +79,7 @@ export default function ApiStatsPage({ apiCalls }) {
       </div>
 
       {/* Source table */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--bord)', borderRadius: 11, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--card)', border: '1px solid var(--bord)', borderRadius: 11, overflowX: 'auto' }}>
         <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--bord)' }}>
           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700 }}>Status por Fonte</div>
         </div>
@@ -109,7 +107,7 @@ export default function ApiStatsPage({ apiCalls }) {
                 </td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid var(--bord)', fontFamily: 'DM Mono', fontSize: 11 }}>{m.calls}</td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid var(--bord)', fontFamily: 'DM Mono', fontSize: 11 }}>{m.latencyMs}ms</td>
-                <td style={{ padding: '11px 14px', borderBottom: '1px solid var(--bord)', fontFamily: 'DM Mono', fontSize: 11, color: '#22c55e' }}>{m.errorPct}%</td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid var(--bord)', fontFamily: 'DM Mono', fontSize: 11, color: 'var(--red)' }}>{m.errorPct}%</td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid var(--bord)', fontFamily: 'DM Mono', fontSize: 11 }}>{m.uptime}%</td>
               </tr>
             ))}

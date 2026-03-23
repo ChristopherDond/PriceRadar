@@ -1,20 +1,21 @@
-import React from 'react'
-import { brl } from '../utils/priceEngine'
+import { brl, getBestAvailableSource } from '../utils/priceEngine'
 
 export default function ProductCard({ product, prices, isFavorite, onClick, delay = 0 }) {
-  const best = prices[0]
+  const best = getBestAvailableSource(prices)
+  if (!best) return null
 
   return (
-    <div
-      className="animate-stagger"
+    <button
+      type="button"
+      className="animate-stagger product-card"
       onClick={onClick}
+      aria-label={`Abrir detalhes de ${product.name}`}
       style={{
         background: 'var(--card)', border: '1px solid var(--bord)',
         borderRadius: 11, padding: 14, cursor: 'pointer',
         transition: 'all .15s', animationDelay: `${delay}ms`,
+        width: '100%', textAlign: 'left',
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bord-hover)'; e.currentTarget.style.background = 'var(--card-hover)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bord)'; e.currentTarget.style.background = 'var(--card)'; e.currentTarget.style.transform = 'none' }}
     >
       <div style={{ fontSize: 28, marginBottom: 6 }}>{product.emoji}</div>
 
@@ -41,6 +42,6 @@ export default function ProductCard({ product, prices, isFavorite, onClick, dela
         </div>
         {isFavorite && <span style={{ fontSize: 12 }}>❤️</span>}
       </div>
-    </div>
+    </button>
   )
 }

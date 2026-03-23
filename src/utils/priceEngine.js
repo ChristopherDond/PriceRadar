@@ -37,7 +37,15 @@ export function getSourcePrices(productId, basePrice) {
         responseMs:   Math.floor(seededRng(seed + 200) * 350) + 80,
       }
     })
-    .sort((a, b) => a.price - b.price)
+    .sort((a, b) => {
+      if (a.available !== b.available) return a.available ? -1 : 1
+      return a.price - b.price
+    })
+}
+
+/** Return the cheapest available source, with fallback to first source */
+export function getBestAvailableSource(srcPrices) {
+  return srcPrices.find(src => src.available) ?? srcPrices[0] ?? null
 }
 
 /**
@@ -87,7 +95,8 @@ export function getPriceHistory(productId, basePrice, days = 90) {
  * @returns {Insight}
  */
 export function generateInsight(history, srcPrices) {
-  const current = srcPrices[0].price
+  const best = getBestAvailableSource(srcPrices)
+  const current = best?.price ?? 0
   const prices  = history.map(h => h.price)
   const max90   = Math.max(...prices)
   const min90   = Math.min(...prices)

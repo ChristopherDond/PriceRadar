@@ -1,15 +1,16 @@
-import React, { useState, useMemo, useRef } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Toast from './components/Toast'
-import SearchPage from './pages/SearchPage'
-import ProductPage from './pages/ProductPage'
-import FavoritesPage from './pages/FavoritesPage'
-import AlertsPage from './pages/AlertsPage'
-import ApiStatsPage from './pages/ApiStatsPage'
 import { useStore } from './hooks/useStore'
 import { useToast } from './hooks/useToast'
 import { PRODUCTS, SOURCES } from './data/catalog'
 import { getSourcePrices } from './utils/priceEngine'
+
+const SearchPage = lazy(() => import('./pages/SearchPage'))
+const ProductPage = lazy(() => import('./pages/ProductPage'))
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
+const AlertsPage = lazy(() => import('./pages/AlertsPage'))
+const ApiStatsPage = lazy(() => import('./pages/ApiStatsPage'))
 
 // Pre-compute all prices once (stable between renders)
 const ALL_PRICES = Object.fromEntries(
@@ -25,6 +26,7 @@ export default function App() {
   const [loadProgress, setLoadProgress] = useState({})
   const [hasSearched, setHasSearched] = useState(false)
   const searchRef = useRef(null)
+  const searchRequestRef = useRef(0)
 
   const store  = useStore()
   const toastFn = useToast()
@@ -33,6 +35,8 @@ export default function App() {
   async function doSearch(term) {
     const q = (term ?? query).trim()
     if (!q) return
+
+    const requestId = ++searchRequestRef.current
 
     setQuery(q)
     setSearching(true)
@@ -44,10 +48,12 @@ export default function App() {
     // Simulate staggered API calls
     for (let i = 0; i < SOURCES.length; i++) {
       await new Promise(r => setTimeout(r, 180 + i * 170))
+      if (requestId !== searchRequestRef.current) return
       setLoadProgress(prev => ({ ...prev, [SOURCES[i].id]: true }))
     }
 
     await new Promise(r => setTimeout(r, 200))
+    if (requestId !== searchRequestRef.current) return
 
     const ql = q.toLowerCase()
     const found = PRODUCTS.filter(p =>
@@ -81,8 +87,8 @@ export default function App() {
   }
 
   // ── Alerts ───────────────────────────────────────────────────
-  function handleAddAlert(product, targetPrice, currentPrice) {
-    store.addAlert(product, targetPrice, currentPrice)
+  function handleAddAlert(product, targetPrice) {
+    store.addAlert(product, targetPrice)
     toastFn.show(`Alerta criado para R$ ${targetPrice.toLocaleString('pt-BR')}`, '🔔')
   }
 
@@ -93,18 +99,19 @@ export default function App() {
 
   // ── Render ───────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="app-shell" style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar
         view={view}
         favCount={store.favorites.length}
         alertCount={store.alerts.filter(a => a.active).length}
         apiCalls={store.apiCalls}
+        sourceCount={SOURCES.length}
         onNavigate={navigate}
       />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div className="app-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         {/* Topbar */}
-        <div style={{
+        <div className="app-topbar" style={{
           position: 'sticky', top: 0, zIndex: 10,
           background: 'rgba(7,7,15,.92)', backdropFilter: 'blur(12px)',
           borderBottom: '1px solid var(--bord)',
@@ -118,7 +125,9 @@ export default function App() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && doSearch()}
+              aria-label="Buscar produto, marca ou categoria"
               placeholder="Buscar produto, marca ou categoria..."
+              disabled={searching}
               style={{
                 width: '100%', background: 'var(--surf)',
                 border: '1px solid var(--bord)', borderRadius: 7,
@@ -133,6 +142,7 @@ export default function App() {
           <button
             onClick={() => doSearch()}
             disabled={searching}
+            aria-label="Executar busca"
             style={{
               background: 'var(--amber)', color: 'var(--bg)', border: 'none',
               padding: '8px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 600,
@@ -146,48 +156,51 @@ export default function App() {
         </div>
 
         {/* Main content */}
-        <div style={{ padding: 20, flex: 1 }}>
-          {view === 'search' && (
-            <SearchPage
-              results={results}
-              searching={searching}
-              hasSearched={hasSearched}
-              loadingProgress={loadProgress}
-              favorites={store.favorites}
-              allPrices={ALL_PRICES}
-              onOpenProduct={openProduct}
-              onQuickSearch={term => { setQuery(term); doSearch(term) }}
-            />
-          )}
+        <div className="app-content" style={{ padding: 20, flex: 1 }}>
+          <Suspense fallback={<div className="page-loading">Carregando painel...</div>}>
+            {view === 'search' && (
+              <SearchPage
+                results={results}
+                searching={searching}
+                hasSearched={hasSearched}
+                loadingProgress={loadProgress}
+                favorites={store.favorites}
+                allPrices={ALL_PRICES}
+                onOpenProduct={openProduct}
+                onQuickSearch={term => { setQuery(term); doSearch(term) }}
+              />
+            )}
 
-          {view === 'product' && selectedProduct && (
-            <ProductPage
-              product={selectedProduct}
-              favorites={store.favorites}
-              onToggleFavorite={handleToggleFav}
-              onAddAlert={handleAddAlert}
-              onBack={() => setView('search')}
-            />
-          )}
+            {view === 'product' && selectedProduct && (
+              <ProductPage
+                product={selectedProduct}
+                favorites={store.favorites}
+                onToggleFavorite={handleToggleFav}
+                onAddAlert={handleAddAlert}
+                onBack={() => setView('search')}
+              />
+            )}
 
-          {view === 'favorites' && (
-            <FavoritesPage
-              favorites={store.favorites}
-              onOpenProduct={p => openProduct(p)}
-              onRemoveFavorite={id => handleToggleFav(id)}
-            />
-          )}
+            {view === 'favorites' && (
+              <FavoritesPage
+                favorites={store.favorites}
+                onOpenProduct={p => openProduct(p)}
+                onRemoveFavorite={id => handleToggleFav(id)}
+              />
+            )}
 
-          {view === 'alerts' && (
-            <AlertsPage
-              alerts={store.alerts}
-              onDeleteAlert={handleDeleteAlert}
-            />
-          )}
+            {view === 'alerts' && (
+              <AlertsPage
+                alerts={store.alerts}
+                allPrices={ALL_PRICES}
+                onDeleteAlert={handleDeleteAlert}
+              />
+            )}
 
-          {view === 'api-stats' && (
-            <ApiStatsPage apiCalls={store.apiCalls} />
-          )}
+            {view === 'api-stats' && (
+              <ApiStatsPage apiCalls={store.apiCalls} sourceCount={SOURCES.length} />
+            )}
+          </Suspense>
         </div>
       </div>
 

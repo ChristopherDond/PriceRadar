@@ -1,6 +1,5 @@
-import React from 'react'
 import { PRODUCTS } from '../data/catalog'
-import { getSourcePrices, brl } from '../utils/priceEngine'
+import { getBestAvailableSource, getSourcePrices, brl } from '../utils/priceEngine'
 
 export default function FavoritesPage({ favorites, onOpenProduct, onRemoveFavorite }) {
   const items = PRODUCTS.filter(p => favorites.includes(p.id))
@@ -25,7 +24,8 @@ export default function FavoritesPage({ favorites, onOpenProduct, onRemoveFavori
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 12 }}>
         {items.map((p, idx) => {
           const prices = getSourcePrices(p.id, p.base)
-          const best   = prices[0]
+          const best   = getBestAvailableSource(prices)
+          if (!best) return null
           return (
             <div
               key={p.id}
@@ -36,9 +36,11 @@ export default function FavoritesPage({ favorites, onOpenProduct, onRemoveFavori
                 animationDelay: `${idx * 50}ms`,
               }}
             >
-              <div
-                style={{ cursor: 'pointer' }}
+              <button
+                type="button"
+                style={{ cursor: 'pointer', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: 'inherit' }}
                 onClick={() => onOpenProduct(p)}
+                aria-label={`Abrir produto ${p.name}`}
               >
                 <div style={{ fontSize: 28, marginBottom: 6 }}>{p.emoji}</div>
                 <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 2, lineHeight: 1.3 }}>{p.name}</div>
@@ -50,10 +52,12 @@ export default function FavoritesPage({ favorites, onOpenProduct, onRemoveFavori
                   {brl(best.price)}
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'DM Mono' }}>via {best.name}</div>
-              </div>
+              </button>
 
               <button
+                type="button"
                 onClick={() => onRemoveFavorite(p.id)}
+                aria-label={`Remover ${p.name} dos favoritos`}
                 style={{
                   width: '100%', marginTop: 12,
                   background: 'var(--red-dim)', border: '1px solid rgba(244,63,94,.2)',

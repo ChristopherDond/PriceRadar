@@ -12,12 +12,29 @@ function loadLS(key, fallback) {
 }
 
 function saveLS(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch {}
+  try { localStorage.setItem(key, JSON.stringify(value)) }
+  catch { return }
+}
+
+function normalizeAlerts(raw) {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter(a => a && typeof a === 'object')
+    .map(a => ({
+      id: a.id ?? Date.now(),
+      productId: a.productId,
+      name: a.name ?? 'Produto',
+      emoji: a.emoji ?? '🛒',
+      target: Number(a.target ?? 0),
+      active: a.active !== false,
+      createdAt: a.createdAt ?? new Date().toLocaleDateString('pt-BR'),
+    }))
+    .filter(a => Number.isFinite(a.productId) && Number.isFinite(a.target) && a.target > 0)
 }
 
 export function useStore() {
   const [favorites, setFavorites]   = useState(() => loadLS('pr_favs', []))
-  const [alerts, setAlerts]         = useState(() => loadLS('pr_alerts', []))
+  const [alerts, setAlerts]         = useState(() => normalizeAlerts(loadLS('pr_alerts', [])))
   const [apiCalls, setApiCalls]     = useState(() => loadLS('pr_calls', 0))
 
   const toggleFavorite = useCallback((productId) => {
@@ -30,14 +47,13 @@ export function useStore() {
     })
   }, [])
 
-  const addAlert = useCallback((product, targetPrice, currentPrice) => {
+  const addAlert = useCallback((product, targetPrice) => {
     const alert = {
       id:        Date.now(),
       productId: product.id,
       name:      product.name,
       emoji:     product.emoji,
-      target:    parseInt(targetPrice),
-      current:   currentPrice,
+      target:    Number(targetPrice),
       active:    true,
       createdAt: new Date().toLocaleDateString('pt-BR'),
     }

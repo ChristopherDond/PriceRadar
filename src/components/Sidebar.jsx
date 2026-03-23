@@ -1,5 +1,3 @@
-import React from 'react'
-
 const NAV_ITEMS = [
   { id: 'search',    icon: '🔍', label: 'Buscar'    },
   { id: 'favorites', icon: '❤️', label: 'Favoritos' },
@@ -7,29 +5,29 @@ const NAV_ITEMS = [
   { id: 'api-stats', icon: '📊', label: 'API Stats' },
 ]
 
-export default function Sidebar({ view, favCount, alertCount, apiCalls, onNavigate }) {
+export default function Sidebar({ view, favCount, alertCount, apiCalls, sourceCount, onNavigate }) {
   const activeView = view === 'product' ? 'search' : view
 
   return (
-    <aside style={{
-      width: 200, minHeight: '100vh',
+    <aside className="sidebar" style={{
+      width: 'var(--sidebar-w)', minHeight: '100vh',
       background: 'var(--surf)', borderRight: '1px solid var(--bord)',
       display: 'flex', flexDirection: 'column',
       position: 'sticky', top: 0, height: '100vh',
       flexShrink: 0,
     }}>
       {/* Logo */}
-      <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--bord)' }}>
+      <div className="sidebar-brand" style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--bord)' }}>
         <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 17, fontWeight: 800, color: 'var(--amber)', letterSpacing: '-0.5px' }}>
           PriceRadar
         </div>
-        <div style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'DM Mono, monospace', letterSpacing: '1.5px', textTransform: 'uppercase', marginTop: 2 }}>
+        <div className="sidebar-brand-sub" style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'DM Mono, monospace', letterSpacing: '1.5px', textTransform: 'uppercase', marginTop: 2 }}>
           comparador inteligente
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ padding: '10px 6px', flex: 1 }}>
+      <nav className="sidebar-nav" style={{ padding: '10px 6px', flex: 1 }}>
         {NAV_ITEMS.map(item => {
           const badge = item.id === 'favorites' ? favCount : item.id === 'alerts' ? alertCount : 0
           const isActive = activeView === item.id
@@ -37,6 +35,9 @@ export default function Sidebar({ view, favCount, alertCount, apiCalls, onNaviga
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={item.label}
+              className="sidebar-nav-btn"
               style={{
                 display: 'flex', alignItems: 'center', gap: 9,
                 padding: '9px 10px', borderRadius: 7,
@@ -49,7 +50,7 @@ export default function Sidebar({ view, favCount, alertCount, apiCalls, onNaviga
               }}
             >
               <span style={{ fontSize: 14, width: 18, textAlign: 'center' }}>{item.icon}</span>
-              {item.label}
+              <span className="sidebar-nav-label">{item.label}</span>
               {badge > 0 && (
                 <span style={{
                   marginLeft: 'auto', background: 'var(--amber)', color: 'var(--bg)',
@@ -65,10 +66,10 @@ export default function Sidebar({ view, favCount, alertCount, apiCalls, onNaviga
       </nav>
 
       {/* Stats */}
-      <div style={{ padding: 10, borderTop: '1px solid var(--bord)', display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div className="sidebar-stats" style={{ padding: 10, borderTop: '1px solid var(--bord)', display: 'flex', flexDirection: 'column', gap: 7 }}>
         {[
           { label: 'API Calls', value: apiCalls.toLocaleString('pt-BR'), color: 'var(--amber)' },
-          { label: 'Fontes Ativas', value: '5', color: 'var(--text)' },
+          { label: 'Fontes Ativas', value: String(sourceCount), color: 'var(--text)' },
         ].map(stat => (
           <div key={stat.label} style={{ background: 'var(--card)', border: '1px solid var(--bord)', borderRadius: 6, padding: '8px 10px' }}>
             <div style={{ fontSize: 8.5, textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--muted)', fontFamily: 'DM Mono, monospace' }}>

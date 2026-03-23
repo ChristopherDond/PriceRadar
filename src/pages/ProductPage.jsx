@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import PriceChart from '../components/PriceChart'
 import InsightCard from '../components/InsightCard'
-import { getSourcePrices, getPriceHistory, generateInsight, brl } from '../utils/priceEngine'
+import { getBestAvailableSource, getSourcePrices, getPriceHistory, generateInsight, brl } from '../utils/priceEngine'
 
 export default function ProductPage({ product, favorites, onToggleFavorite, onAddAlert, onBack }) {
   const [period, setPeriod] = useState('90d')
@@ -12,30 +12,34 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
   const hist30  = useMemo(() => getPriceHistory(product.id, product.base, 30), [product])
   const history = period === '30d' ? hist30 : hist90
   const insight = useMemo(() => generateInsight(hist90, prices), [hist90, prices])
+  const bestAvailable = useMemo(() => getBestAvailableSource(prices), [prices])
   const isFav   = favorites.includes(product.id)
 
   function handleAddAlert() {
-    const val = parseInt(alertValue)
+    const val = Number(alertValue)
     if (!val || val <= 0) return
-    onAddAlert(product, val, prices[0].price)
+    onAddAlert(product, val)
     setAlertValue('')
   }
 
-  const savings = prices[prices.length - 1].price - prices[0].price
+  const fallbackBest = prices[0]
+  const best = bestAvailable ?? fallbackBest
+  const highest = prices.at(-1)
+  const savings = highest && best ? highest.price - best.price : 0
 
   return (
     <div className="animate-fade">
       {/* Back */}
       <button
+        type="button"
         onClick={onBack}
+        className="btn-ghost"
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
           fontSize: 11.5, color: 'var(--muted)', cursor: 'pointer',
           border: 'none', background: 'none', fontFamily: 'DM Sans',
           marginBottom: 18, padding: 0, transition: 'color .15s',
         }}
-        onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-        onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
       >
         ← Voltar aos resultados
       </button>
@@ -50,7 +54,9 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
           </div>
         </div>
         <button
+          type="button"
           onClick={() => onToggleFavorite(product.id)}
+          aria-pressed={isFav}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '7px 13px', borderRadius: 7, fontSize: 11.5, fontWeight: 500,
@@ -68,10 +74,10 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
       <InsightCard insight={insight} />
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--kpi-cols)', gap: 10, marginBottom: 14 }}>
         {[
-          { label: 'Melhor Preço',    value: brl(prices[0].price),    color: '#22c55e', sub: `via ${prices[0].name}` },
-          { label: 'Maior Preço',     value: brl(prices.at(-1).price), color: 'var(--red)', sub: `via ${prices.at(-1).name}` },
+          { label: 'Melhor Preço',    value: brl(best.price),          color: '#22c55e', sub: `via ${best.name}` },
+          { label: 'Maior Preço',     value: brl(highest.price),       color: 'var(--red)', sub: `via ${highest.name}` },
           { label: 'Economia Máxima', value: brl(savings),            color: 'var(--amber)', sub: 'entre lojas' },
           { label: 'Lojas Ativas',    value: `${prices.filter(p => p.available).length}/${prices.length}`, color: 'var(--text)', sub: 'disponíveis' },
         ].map(s => (
@@ -84,7 +90,7 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
       </div>
 
       {/* Chart + Table */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--product-main-cols)', gap: 14, marginBottom: 14 }}>
         {/* Chart */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--bord)', borderRadius: 11, padding: 18 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -103,11 +109,11 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
               ))}
             </div>
           </div>
-          <PriceChart data={history} avg={insight.avg90} />
+            <PriceChart data={history} avg={period === '30d' ? Math.round(hist30.reduce((sum, h) => sum + h.price, 0) / hist30.length) : insight.avg90} />
         </div>
 
         {/* Source table */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--bord)', borderRadius: 11, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--bord)', borderRadius: 11, overflowX: 'auto' }}>
           <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--bord)' }}>
             <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 14, fontWeight: 700 }}>Comparar Lojas</div>
           </div>
@@ -161,6 +167,8 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
               value={alertValue}
               onChange={e => setAlertValue(e.target.value.replace(/\D/g, ''))}
               placeholder={Math.round(insight.current * 0.9).toString()}
+              aria-label="Valor alvo do alerta"
+              inputMode="numeric"
               style={{
                 background: 'var(--surf)', border: '1px solid var(--bord)',
                 borderRadius: 7, padding: '8px 11px 8px 30px',
@@ -173,8 +181,10 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
             />
           </div>
           <button
+            type="button"
             onClick={handleAddAlert}
             disabled={!alertValue}
+            aria-label="Criar alerta de preço"
             style={{
               background: 'var(--amber)', color: 'var(--bg)', border: 'none',
               padding: '8px 14px', borderRadius: 7, fontSize: 12.5, fontWeight: 600,

@@ -1,4 +1,3 @@
-import React from 'react'
 import ProductCard from '../components/ProductCard'
 import { SOURCES } from '../data/catalog'
 
@@ -86,8 +85,11 @@ export default function SearchPage({
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
         {QUICK_TERMS.map(term => (
           <button
+            type="button"
             key={term}
             onClick={() => onQuickSearch(term)}
+            aria-label={`Buscar por ${term}`}
+            className="quick-chip"
             style={{
               background: 'var(--card)', border: '1px solid var(--bord)',
               color: 'var(--muted)', padding: '5px 12px',
@@ -95,8 +97,6 @@ export default function SearchPage({
               cursor: 'pointer', fontFamily: 'DM Sans',
               transition: 'all .15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--amber)'; e.currentTarget.style.color = 'var(--amber)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bord)'; e.currentTarget.style.color = 'var(--muted)' }}
           >
             {term}
           </button>

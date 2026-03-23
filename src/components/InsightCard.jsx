@@ -1,4 +1,3 @@
-import React from 'react'
 import { brl } from '../utils/priceEngine'
 
 function ScoreRing({ score }) {
