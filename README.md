@@ -1,5 +1,7 @@
 # PriceRadar
 
+[English version](README-english.md)
+
 Comparador inteligente de precos com foco em descoberta de oportunidades de compra.
 O app simula consultas em multiplas lojas, mostra historico de preco, gera recomendacoes e permite salvar favoritos e alertas.
 
@@ -10,7 +12,7 @@ O app simula consultas em multiplas lojas, mostra historico de preco, gera recom
 
 ## Visao Geral
 
-O projeto foi construido para demonstrar uma experiencia completa de produto frontend:
+Este projeto foi construido para demonstrar uma experiencia completa de produto frontend:
 
 - busca por nome, marca ou categoria
 - simulacao de fontes com progresso por API
