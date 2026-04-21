@@ -1,152 +1,133 @@
-# 🛒 PriceRadar
+# PriceRadar
 
-> Comparador inteligente de preços — busca produtos em múltiplas lojas com histórico, alertas e insights de compra.
+Comparador inteligente de precos com foco em descoberta de oportunidades de compra.
+O app simula consultas em multiplas lojas, mostra historico de preco, gera recomendacoes e permite salvar favoritos e alertas.
 
-![PriceRadar Preview](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
-![Recharts](https://img.shields.io/badge/Recharts-2-22C55E?logo=chart.js&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-2-6E9F18?logo=vitest&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-f59e0b)
 
----
+## Visao Geral
 
-## ✨ Funcionalidades
+O projeto foi construido para demonstrar uma experiencia completa de produto frontend:
 
-| Feature | Descrição |
-|---|---|
-| 🔍 **Busca Multi-fonte** | Simula consultas paralelas em 5 lojas (Amazon, Mercado Livre, Magalu, Americanas, KaBuM) com barra de progresso por API |
-| 📊 **Histórico de Preços** | Gráfico interativo com 30 ou 90 dias de histórico, linha de média e destaque de dip (Black Friday simulado) |
-| 🧠 **Score de Compra** | Algoritmo que analisa preço atual vs. média histórica e gera uma recomendação: *Compre Agora*, *Boa Oportunidade*, *Aguarde* |
-| 🔔 **Alertas de Preço** | Defina um valor alvo e acompanhe visualmente quando o preço atingir o objetivo |
-| ❤️ **Favoritos** | Salve produtos para acompanhar rapidamente sem precisar buscar novamente |
-| 📈 **Dashboard de API** | Métricas de latência, taxa de sucesso e uptime por fonte, com gráfico de barras |
-| 💾 **Persistência Local** | Favoritos, alertas e contagem de API calls persistidos no `localStorage` |
+- busca por nome, marca ou categoria
+- simulacao de fontes com progresso por API
+- comparacao de lojas com melhor oferta disponivel
+- historico de ate 90 dias com comportamento plausivel de mercado
+- insight de compra baseado em media, minimo, maximo e tendencia
+- favoritos e alertas persistidos no localStorage
+- painel de estatisticas de uso das APIs
 
----
+## Stack
 
-## 🚀 Como Rodar
+- React 18
+- Vite 5
+- Recharts
+- Vitest + Testing Library
+- ESLint 9
 
-### Pré-requisitos
-- [Node.js](https://nodejs.org/) v18+
-- npm ou yarn
+## Requisitos
 
-### Instalação
+- Node.js 18+
+- npm 9+
+
+## Setup Rapido
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/priceradar.git
-cd priceradar
-
-# Instale as dependências
+git clone https://github.com/ChristopherDond/PriceRadar.git
+cd PriceRadar
 npm install
-
-# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-Acesse `http://localhost:5173` no browser.
+Aplicacao disponivel em http://localhost:5173.
 
-### Build para produção
+## Scripts
 
 ```bash
-npm run build
-npm run preview
+npm run dev         # ambiente de desenvolvimento
+npm run build       # build de producao
+npm run preview     # preview do build
+npm run lint        # analise estatica
+npm run test        # executa testes uma vez
+npm run test:watch  # testes em modo watch
 ```
 
----
+## Arquitetura
 
-## 🗂️ Estrutura do Projeto
-
-```
-priceradar/
-├── index.html
-├── vite.config.js
-├── package.json
-└── src/
-    ├── main.jsx              # Entry point
-    ├── App.jsx               # Orquestrador principal + roteamento de views
-    │
-    ├── styles/
-    │   └── global.css        # Variáveis CSS, reset, animações
-    │
-    ├── data/
-    │   └── catalog.js        # Catálogo de produtos e fontes de API
-    │
-    ├── utils/
-    │   └── priceEngine.js    # Gerador de preços, histórico e insights
-    │
-    ├── hooks/
-    │   ├── useStore.js       # Estado global (favoritos, alertas, API calls)
-    │   └── useToast.js       # Notificações temporárias
-    │
-    ├── components/
-    │   ├── Sidebar.jsx       # Navegação lateral com stats
-    │   ├── ProductCard.jsx   # Card de produto nos resultados de busca
-    │   ├── PriceChart.jsx    # Gráfico de histórico de preços (Recharts)
-    │   ├── InsightCard.jsx   # Recomendação com score visual (SVG ring)
-    │   └── Toast.jsx         # Notificação toast
-    │
-    └── pages/
-        ├── SearchPage.jsx    # Página de busca com loading de APIs
-        ├── ProductPage.jsx   # Detalhe do produto + gráfico + alerta
-        ├── FavoritesPage.jsx # Lista de produtos favoritados
-        ├── AlertsPage.jsx    # Gerenciamento de alertas de preço
-        └── ApiStatsPage.jsx  # Dashboard de consumo de API
+```text
+src/
+  components/  # UI reutilizavel
+  data/        # catalogo de produtos e fontes
+  hooks/       # estado e comportamento compartilhado
+  pages/       # telas principais da aplicacao
+  styles/      # estilos globais
+  utils/       # engine de preco e insights
 ```
 
----
+Pontos importantes de implementacao:
 
-## 🧩 Como Conectar APIs Reais
+- a busca usa simulacao de chamadas em lote com progresso por fonte
+- os precos sao deterministas por semente para manter consistencia entre renders
+- favoritos, alertas e contador de chamadas ficam persistidos no navegador
+- as paginas sao carregadas com lazy loading para reduzir custo inicial
 
-O projeto usa dados gerados deterministicamente para demonstração. Para conectar APIs reais, edite `src/utils/priceEngine.js`:
+## Como Funciona o Insight de Compra
 
-```js
-// Exemplo: Mercado Livre API
-export async function getMLPrices(query) {
-  const res = await fetch(
-    `https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(query)}&limit=5`
-  )
-  const data = await res.json()
-  return data.results.map(item => ({
-    id:    item.id,
-    name:  item.title,
-    price: item.price,
-    link:  item.permalink,
-  }))
+O motor calcula metricas historicas e classifica a oportunidade com base no preco atual:
+
+- COMPRE AGORA: preco atual muito proximo do minimo historico
+- BOA OPORTUNIDADE: preco atual abaixo da media
+- PRECO MEDIO: faixa intermediaria
+- AGUARDE - PRECO ALTO: preco atual proximo do topo historico
+
+Essa regra fica centralizada no engine para facilitar ajuste fino de thresholds.
+
+## Integrando APIs Reais
+
+Hoje o projeto usa dados simulados para permitir execucao local imediata, sem chave de API.
+
+Para conectar provedores reais:
+
+1. Crie adaptadores de busca por fonte.
+2. Normalize a resposta para um formato unico.
+3. Substitua a etapa de geracao simulada pela chamada real.
+4. Mantenha fallback para dados simulados em caso de falha.
+
+Formato sugerido por item:
+
+```ts
+type PriceResult = {
+  id: string
+  name: string
+  price: number
+  sourceId: string
+  available: boolean
+  link?: string
+  responseMs?: number
 }
 ```
 
-APIs gratuitas compatíveis:
-- **Mercado Livre**: `api.mercadolibre.com` — documentação em [developers.mercadolivre.com.br](https://developers.mercadolivre.com.br)
-- **Open Food Facts**: `world.openfoodfacts.org/api`
-- **Fake Store API**: `fakestoreapi.com` (ótima para testes)
+## Qualidade
 
----
+- testes unitarios no motor de precos
+- base pronta para expandir cobertura de componentes e paginas
+- lint para padrao de codigo consistente
 
-## 🛠️ Stack
+## Roadmap Sugerido
 
-- **React 18** — UI declarativa com hooks
-- **Vite 5** — bundler ultrarrápido
-- **Recharts** — gráficos responsivos (AreaChart, BarChart)
-- **localStorage** — persistência sem backend
+- filtros avancados (faixa de preco, categoria, marca)
+- historico salvo por produto pesquisado
+- comparacao lado a lado entre ofertas
+- notificacoes reais de alerta via e-mail/web push
+- backend para sincronizar favoritos e alertas entre dispositivos
 
----
+## Licenca
 
-## 🎯 Diferenciais para Portfólio
+MIT
 
-Este projeto demonstra:
+## Observacao
 
-- **Consumo de múltiplas APIs** com tratamento de estado de loading
-- **Algoritmo de análise de preços** — média, máx, mín, tendência e score
-- **Persistência de dados** sem banco de dados
-- **Componentização** — separação clara entre componentes, páginas, hooks e utils
-- **UX de dados** — gráficos, badges de status, score visual com SVG
-
----
-
-## 📄 Licença
-
-MIT © 2025 — Feito com ☕ para portfólio
-
----
-
-> **Nota**: Este projeto utiliza dados gerados para demonstração. Os preços exibidos não refletem valores reais de mercado.
+Este repositorio usa dados simulados para fins de demonstracao. Os valores exibidos nao representam precos reais em tempo real.
