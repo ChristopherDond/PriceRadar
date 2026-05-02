@@ -36,6 +36,7 @@ function normalizeRemoteProduct(item, fallbackKey) {
     base: Math.round(price),
     brand: typeof item.brand === 'string' ? item.brand : typeof item.marca === 'string' ? item.marca : 'Parceiro',
     link: typeof item.link === 'string' ? item.link : undefined,
+    thumbnail: typeof item.thumbnail === 'string' ? item.thumbnail : undefined,
     sourceHint: typeof item.source === 'string' ? item.source : 'remote',
   }
 }

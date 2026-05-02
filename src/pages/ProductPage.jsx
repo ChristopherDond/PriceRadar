@@ -46,12 +46,36 @@ export default function ProductPage({ product, favorites, onToggleFavorite, onAd
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 36, marginBottom: 6 }}>{product.emoji}</div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
+          {product.thumbnail ? (
+            <img
+              src={product.thumbnail}
+              alt={product.name}
+              style={{ width: 88, height: 88, borderRadius: 16, objectFit: 'cover', background: 'var(--surf)', border: '1px solid var(--bord)' }}
+            />
+          ) : (
+            <div style={{ fontSize: 36, marginBottom: 6, width: 88, height: 88, display: 'grid', placeItems: 'center', background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--bord)' }}>
+              {product.emoji}
+            </div>
+          )}
+
           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 700, marginBottom: 3 }}>{product.name}</div>
           <div style={{ fontFamily: 'DM Mono', fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
             {product.brand} · {product.cat}
           </div>
+          {product.link && (
+            <a
+              href={product.link}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex', marginTop: 10, fontSize: 11,
+                color: 'var(--amber)', textDecoration: 'none', fontFamily: 'DM Mono',
+              }}
+            >
+              Abrir anúncio original ↗
+            </a>
+          )}
         </div>
         <button
           type="button"
