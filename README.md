@@ -93,12 +93,14 @@ Hoje o projeto usa dados simulados para permitir execucao local imediata, sem ch
 
 O app agora aceita uma base de API configuravel via variaveis de ambiente. Se a API nao estiver disponivel, ele cai automaticamente no catalogo local para manter a demo funcionando.
 
-Exemplo de configuracao:
+Exemplo de configuracao para um gateway proprio:
 
 ```bash
 VITE_PRICERADAR_API_BASE=https://sua-api.com
 VITE_PRICERADAR_SEARCH_ENDPOINT=/search
 ```
+
+Sem configuracao extra, o app tenta primeiro o Mercado Livre como provider real e depois cai para o catalogo local.
 
 Para conectar provedores reais:
 
@@ -106,6 +108,10 @@ Para conectar provedores reais:
 2. Normalize a resposta para um formato unico.
 3. Substitua a etapa de geracao simulada pela chamada real.
 4. Mantenha fallback para dados simulados em caso de falha.
+
+Provider real padrao:
+
+- Mercado Livre Search API: `https://api.mercadolibre.com/sites/MLB/search?q=...`
 
 Contrato esperado para a resposta de busca:
 

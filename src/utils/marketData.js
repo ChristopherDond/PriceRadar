@@ -2,6 +2,7 @@ import { PRODUCTS } from '../data/catalog'
 import { getSourcePrices } from './priceEngine'
 
 const DEFAULT_SEARCH_ENDPOINT = '/search'
+const DEFAULT_PROVIDER = 'mercado-livre'
 
 function normalizeProductId(rawId, fallbackKey) {
   if (typeof rawId === 'number' && Number.isFinite(rawId)) return rawId
@@ -47,6 +48,27 @@ function readRemoteItems(payload) {
   return []
 }
 
+function normalizeMercadoLivreProduct(item, fallbackKey) {
+  if (!item || typeof item !== 'object') return null
+
+  const name = typeof item.title === 'string' ? item.title.trim() : ''
+  const price = Number(item.price)
+
+  if (!name || !Number.isFinite(price) || price <= 0) return null
+
+  return {
+    id: normalizeProductId(item.id ?? item.permalink ?? item.title, fallbackKey),
+    name,
+    cat: typeof item.category_id === 'string' ? item.category_id : 'Produtos',
+    emoji: '🛍️',
+    base: Math.round(price),
+    brand: typeof item.seller?.nickname === 'string' ? item.seller.nickname : 'Mercado Livre',
+    link: typeof item.permalink === 'string' ? item.permalink : undefined,
+    thumbnail: typeof item.thumbnail === 'string' ? item.thumbnail : undefined,
+    sourceHint: 'mercado-livre',
+  }
+}
+
 export function buildCatalogIndex(products) {
   return Object.fromEntries(products.map(product => [product.id, product]))
 }
@@ -56,7 +78,9 @@ export function buildPriceMap(products) {
 }
 
 export function getSearchModeLabel(mode) {
-  return mode === 'remote' ? 'API real' : 'dados simulados'
+  if (mode === 'remote') return 'API real'
+  if (mode === DEFAULT_PROVIDER) return 'Mercado Livre'
+  return 'dados simulados'
 }
 
 export async function searchProducts(query) {
@@ -89,6 +113,25 @@ export async function searchProducts(query) {
     } catch {
       // Fall back to the built-in catalog when the remote gateway is unavailable.
     }
+  }
+
+  try {
+    const url = new URL('https://api.mercadolibre.com/sites/MLB/search')
+    url.searchParams.set('q', term)
+
+    const response = await fetch(url)
+    if (response.ok) {
+      const payload = await response.json()
+      const products = readRemoteItems(payload)
+        .map((item, index) => normalizeMercadoLivreProduct(item, `${term}-ml-${index}`))
+        .filter(Boolean)
+
+      if (products.length > 0) {
+        return { products, mode: DEFAULT_PROVIDER }
+      }
+    }
+  } catch {
+    // Keep falling back to the local catalog if the public API is unreachable.
   }
 
   const ql = term.toLowerCase()

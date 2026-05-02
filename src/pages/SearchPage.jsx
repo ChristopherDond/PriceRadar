@@ -1,5 +1,6 @@
 import ProductCard from '../components/ProductCard'
 import { SOURCES } from '../data/catalog'
+import { getSearchModeLabel } from '../utils/marketData'
 
 const QUICK_TERMS = ['iPhone 15', 'PlayStation 5', 'MacBook Air', 'AirPods Pro', 'Galaxy S24', 'Nintendo Switch']
 
@@ -18,7 +19,7 @@ export default function SearchPage({
             Consultando {SOURCES.length} fontes de dados...
           </div>
           <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'DM Mono', marginBottom: 12 }}>
-            Fonte ativa: {searchMode === 'remote' ? 'API real' : 'dados simulados'}
+            Fonte ativa: {getSearchModeLabel(searchMode)}
           </div>
           {SOURCES.map(source => {
             const done = !!loadingProgress[source.id]
@@ -57,7 +58,7 @@ export default function SearchPage({
       <div className="animate-fade">
         <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 19, fontWeight: 700, marginBottom: 3 }}>Resultados</div>
         <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'DM Mono', marginBottom: 18 }}>
-          {results.length} produto(s) · {SOURCES.length} fontes consultadas · {searchMode === 'remote' ? 'API real' : 'fallback local'}
+          {results.length} produto(s) · {SOURCES.length} fontes consultadas · {getSearchModeLabel(searchMode)}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12 }}>
           {results.map((product, idx) => (
