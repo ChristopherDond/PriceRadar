@@ -1,10 +1,14 @@
-import { lazy, Suspense, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Toast from './components/Toast'
 import { useStore } from './hooks/useStore'
 import { useToast } from './hooks/useToast'
 import { PRODUCTS, SOURCES } from './data/catalog'
-import { getSourcePrices } from './utils/priceEngine'
+import {
+  buildCatalogIndex,
+  buildPriceMap,
+  searchProducts,
+} from './utils/marketData'
 
 const SearchPage = lazy(() => import('./pages/SearchPage'))
 const ProductPage = lazy(() => import('./pages/ProductPage'))
@@ -12,10 +16,22 @@ const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
 const AlertsPage = lazy(() => import('./pages/AlertsPage'))
 const ApiStatsPage = lazy(() => import('./pages/ApiStatsPage'))
 
-// Pre-compute all prices once (stable between renders)
-const ALL_PRICES = Object.fromEntries(
-  PRODUCTS.map(p => [p.id, getSourcePrices(p.id, p.base)])
-)
+const CATALOG_CACHE_KEY = 'pr_catalog_cache'
+
+function loadCatalogCache() {
+  try {
+    const raw = localStorage.getItem(CATALOG_CACHE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+const DEFAULT_CATALOG = {
+  ...buildCatalogIndex(PRODUCTS),
+  ...loadCatalogCache(),
+}
+const DEFAULT_PRICE_MAP = buildPriceMap(Object.values(DEFAULT_CATALOG))
 
 export default function App() {
   const [view, setView]               = useState('search')      // 'search' | 'product' | 'favorites' | 'alerts' | 'api-stats'
@@ -25,11 +41,22 @@ export default function App() {
   const [searching, setSearching]     = useState(false)
   const [loadProgress, setLoadProgress] = useState({})
   const [hasSearched, setHasSearched] = useState(false)
+  const [searchMode, setSearchMode]   = useState('local')
+  const [catalogById, setCatalogById]  = useState(DEFAULT_CATALOG)
+  const [priceMap, setPriceMap]       = useState(DEFAULT_PRICE_MAP)
   const searchRef = useRef(null)
   const searchRequestRef = useRef(0)
 
   const store  = useStore()
   const toastFn = useToast()
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(catalogById))
+    } catch {
+      // Ignore storage quota and privacy-mode errors.
+    }
+  }, [catalogById])
 
   // ── Search ──────────────────────────────────────────────────
   async function doSearch(term) {
@@ -45,25 +72,32 @@ export default function App() {
     setView('search')
     setProduct(null)
 
-    // Simulate staggered API calls
-    for (let i = 0; i < SOURCES.length; i++) {
-      await new Promise(r => setTimeout(r, 180 + i * 170))
-      if (requestId !== searchRequestRef.current) return
-      setLoadProgress(prev => ({ ...prev, [SOURCES[i].id]: true }))
-    }
+    const progressPromise = (async () => {
+      for (let i = 0; i < SOURCES.length; i++) {
+        await new Promise(r => setTimeout(r, 180 + i * 170))
+        if (requestId !== searchRequestRef.current) return false
+        setLoadProgress(prev => ({ ...prev, [SOURCES[i].id]: true }))
+      }
 
-    await new Promise(r => setTimeout(r, 200))
-    if (requestId !== searchRequestRef.current) return
+      await new Promise(r => setTimeout(r, 200))
+      return requestId === searchRequestRef.current
+    })()
 
-    const ql = q.toLowerCase()
-    const found = PRODUCTS.filter(p =>
-      p.name.toLowerCase().includes(ql) ||
-      p.cat.toLowerCase().includes(ql)  ||
-      p.brand.toLowerCase().includes(ql)
-    )
+    const searchPromise = searchProducts(q)
+
+    const [progressReady, searchResult] = await Promise.all([progressPromise, searchPromise])
+    if (requestId !== searchRequestRef.current || !progressReady) return
+
+    const found = searchResult.products
+    const mergedCatalog = buildCatalogIndex(found)
+    const mergedPrices = buildPriceMap(found)
+
+    setCatalogById(prev => ({ ...prev, ...mergedCatalog }))
+    setPriceMap(prev => ({ ...prev, ...mergedPrices }))
+    setSearchMode(searchResult.mode)
     setResults(found)
     setSearching(false)
-    store.incrementApiCalls(SOURCES.length)
+    store.incrementApiCalls(searchResult.mode === 'remote' ? 1 : SOURCES.length)
 
     if (!found.length) toastFn.show('Nenhum produto encontrado', '🔭')
   }
@@ -164,8 +198,9 @@ export default function App() {
                 searching={searching}
                 hasSearched={hasSearched}
                 loadingProgress={loadProgress}
+                searchMode={searchMode}
                 favorites={store.favorites}
-                allPrices={ALL_PRICES}
+                allPrices={priceMap}
                 onOpenProduct={openProduct}
                 onQuickSearch={term => { setQuery(term); doSearch(term) }}
               />
@@ -184,6 +219,7 @@ export default function App() {
             {view === 'favorites' && (
               <FavoritesPage
                 favorites={store.favorites}
+                catalogById={catalogById}
                 onOpenProduct={p => openProduct(p)}
                 onRemoveFavorite={id => handleToggleFav(id)}
               />
@@ -192,7 +228,7 @@ export default function App() {
             {view === 'alerts' && (
               <AlertsPage
                 alerts={store.alerts}
-                allPrices={ALL_PRICES}
+                allPrices={priceMap}
                 onDeleteAlert={handleDeleteAlert}
               />
             )}

@@ -91,12 +91,41 @@ Essa regra fica centralizada no engine para facilitar ajuste fino de thresholds.
 
 Hoje o projeto usa dados simulados para permitir execucao local imediata, sem chave de API.
 
+O app agora aceita uma base de API configuravel via variaveis de ambiente. Se a API nao estiver disponivel, ele cai automaticamente no catalogo local para manter a demo funcionando.
+
+Exemplo de configuracao:
+
+```bash
+VITE_PRICERADAR_API_BASE=https://sua-api.com
+VITE_PRICERADAR_SEARCH_ENDPOINT=/search
+```
+
 Para conectar provedores reais:
 
 1. Crie adaptadores de busca por fonte.
 2. Normalize a resposta para um formato unico.
 3. Substitua a etapa de geracao simulada pela chamada real.
 4. Mantenha fallback para dados simulados em caso de falha.
+
+Contrato esperado para a resposta de busca:
+
+```ts
+type SearchResponse = {
+  results: Array<{
+    id: string | number
+    name: string
+    price?: number
+    base?: number
+    currentPrice?: number
+    listPrice?: number
+    brand?: string
+    cat?: string
+    category?: string
+    emoji?: string
+    link?: string
+  }>
+}
+```
 
 Formato sugerido por item:
 

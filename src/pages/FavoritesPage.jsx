@@ -1,8 +1,9 @@
-import { PRODUCTS } from '../data/catalog'
 import { getBestAvailableSource, getSourcePrices, brl } from '../utils/priceEngine'
 
-export default function FavoritesPage({ favorites, onOpenProduct, onRemoveFavorite }) {
-  const items = PRODUCTS.filter(p => favorites.includes(p.id))
+export default function FavoritesPage({ favorites, catalogById, onOpenProduct, onRemoveFavorite }) {
+  const items = favorites
+    .map(id => catalogById[id])
+    .filter(Boolean)
 
   if (!items.length) {
     return (

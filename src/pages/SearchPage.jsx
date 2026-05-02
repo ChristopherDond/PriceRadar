@@ -5,7 +5,7 @@ const QUICK_TERMS = ['iPhone 15', 'PlayStation 5', 'MacBook Air', 'AirPods Pro',
 
 export default function SearchPage({
   results, searching, hasSearched, loadingProgress,
-  favorites, allPrices, onOpenProduct, onQuickSearch,
+  searchMode, favorites, allPrices, onOpenProduct, onQuickSearch,
 }) {
   if (searching) {
     return (
@@ -16,6 +16,9 @@ export default function SearchPage({
         }}>
           <div style={{ fontSize: 9.5, color: 'var(--muted)', fontFamily: 'DM Mono', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 14 }}>
             Consultando {SOURCES.length} fontes de dados...
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'DM Mono', marginBottom: 12 }}>
+            Fonte ativa: {searchMode === 'remote' ? 'API real' : 'dados simulados'}
           </div>
           {SOURCES.map(source => {
             const done = !!loadingProgress[source.id]
@@ -54,7 +57,7 @@ export default function SearchPage({
       <div className="animate-fade">
         <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 19, fontWeight: 700, marginBottom: 3 }}>Resultados</div>
         <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'DM Mono', marginBottom: 18 }}>
-          {results.length} produto(s) · {SOURCES.length} fontes consultadas
+          {results.length} produto(s) · {SOURCES.length} fontes consultadas · {searchMode === 'remote' ? 'API real' : 'fallback local'}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12 }}>
           {results.map((product, idx) => (
